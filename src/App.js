@@ -12,11 +12,20 @@ const Filter = ({ searchValue, handleChange }) => {
 };
 
 const Contry = ({ value }) => {
+  const toggleShow = (val) => {
+    console.log(val);
+  };
   return (
     <div>
       <ul>
         {value.map((val) => {
-          return <li key={val.name}>{val.name}</li>;
+          return (
+            <li key={val.name}>
+              {val.name} <button onClick={() => toggleShow(val)}>show</button>
+              <br></br>
+              <img src={val.flag} alt="" width="100px" />
+            </li>
+          );
         })}
       </ul>
     </div>
@@ -32,8 +41,11 @@ const App = () => {
       axios
         .get(`https://restcountries.eu/rest/v2/name/${searchValue}`)
         .then((response) => {
-          setContries(response.data);
-          console.log('promise fulfilled');
+          if (response.data.length > 10) {
+            setContries([{ name: 'too many matches, specify another filter' }]);
+          } else {
+            setContries(response.data);
+          }
         });
     }
   }, [searchValue]);
@@ -43,10 +55,14 @@ const App = () => {
     console.log(e.target.value);
   };
 
+  const onShow = (e) => {
+    console.log(e.target.value);
+  };
+
   return (
     <div>
       <Filter searchValue={searchValue} handleChange={onSearch}></Filter>
-      <Contry value={contries}></Contry>
+      <Contry value={contries} handleClick={onShow}></Contry>
     </div>
   );
 };
