@@ -1,94 +1,129 @@
-import React, { useState, useEffect } from 'react'
-import Note from './components/Note'
-import Notification from './components/Notification'
-import noteService from './services/notes'
+import React, { useState, useEffect } from 'react';
+import phoneService from './services/persons'
+
+const Filter = ({ searchValue, handleChange }) => {
+  return (
+    <div>
+      <form>
+        filter shown with: <input value={searchValue} onChange={handleChange} />
+      </form>
+    </div>
+  );
+};
+
+const PersonForm = ({
+  handleSubmit,
+  nameValue,
+  numValue,
+  nameChange,
+  numChange,
+}) => {
+  return (
+    <div>
+      <form onSubmit={handleSubmit}>
+        <div>
+          name: <input value={nameValue} onChange={nameChange} />
+          <br></br>
+          number: <input value={numValue} onChange={numChange} />
+        </div>
+        <div>
+          <button type="submit">add</button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+const Persons = ({ value }) => {
+  return (
+    <div>
+      <ul>
+        {value.map((person) => {
+          return (
+            <li key={person.name}>
+              {person.name} {person.number}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+};
 
 const App = () => {
-  const [notes, setNotes] = useState([]) 
-  const [newNote, setNewNote] = useState('')
-  const [showAll, setShowAll] = useState(true)
-  const [errorMessage, setErrorMessage] = useState(null)
+  const [persons, setPersons] = useState([]);
+  const [newName, setNewName] = useState('');
+  const [newNumber, setNewNumber] = useState('');
+  const [searchValue, setSearchValue] = useState('');
+  const [personToShow, setPersonToShow] = useState(persons);
 
-  useEffect(() => {
-    noteService
-      .getAll()
-      .then(initialNotes => {
-        setNotes(initialNotes)
-      })
-  }, [])
+  const hook = () => {
+    phoneService.getAll().then((res) => {
+      setPersonToShow(res.persons);
+      setPersons(res.persons);
+    });
+  };
 
-  const addNote = (event) => {
-    event.preventDefault()
-    const noteObject = {
-      content: newNote,
-      date: new Date().toISOString(),
-      important: Math.random() > 0.5,
-      id: notes.length + 1,
+  useEffect(hook, []);
+
+  const onSubmit = (ev) => {
+    ev.preventDefault();
+    const newPerson = {
+      name: newName,
+      number: newNumber,
+      id: new Date()
+    };
+    let findIdx = persons.findIndex((item) => item.name === newName);
+    if (findIdx >= 0) {
+      alert(`${newName} is already added to phonebook`);
+      return;
     }
-  
-    noteService
-      .create(noteObject)
-      .then(returnedNote => {
-        setNotes(notes.concat(returnedNote))
-        setNewNote('')
-      })
-  }
-
-  const toggleImportanceOf = (id) => {
-    // const url = `http://localhost:3001/notes/${id}`
-    const note = notes.find(n => n.id === id)
-    const changedNote = { ...note, important: !note.important }
-  
-    noteService
-      .update(id, changedNote)
-      .then(returnedNote => {
-        setNotes(notes.map(note => note.id !== id ? note : returnedNote))
-      })
-      .catch(error => {
-        setErrorMessage(
-          `Note '${note.content}' was already removed from server`
+    phoneService.create(newPerson).then(response => {
+      console.log(response)
+    })
+    setPersons(persons.concat(newPerson));
+    setPersonToShow(JSON.parse(JSON.stringify(persons.concat(newPerson))));
+    setNewName('');
+    setNewNumber('');
+  };
+  const handleNameChange = (event) => {
+    setNewName(event.target.value);
+  };
+  const handleNumberChange = (event) => {
+    setNewNumber(event.target.value);
+  };
+  const handleSearchValue = (event) => {
+    setSearchValue(event.target.value);
+    if (event.target.value) {
+      setPersonToShow(
+        persons.filter(
+          (person) =>
+            event.target.value.toLowerCase() === person.name.toLowerCase()
         )
-        setTimeout(() => {
-          setErrorMessage(null)
-        }, 5000)   
-      })
-  }
-
-  const handleNoteChange = (event) => {
-    setNewNote(event.target.value)
-  }
-
-  const notesToShow = showAll
-    ? notes
-    : notes.filter(note => note.important)
+      );
+    } else {
+      setPersonToShow(persons);
+    }
+  };
 
   return (
     <div>
-      <h1>Notes</h1>
-      <Notification message={errorMessage} />
-      <div>
-        <button onClick={() => setShowAll(!showAll)}>
-          show {showAll ? 'important' : 'all' }
-        </button>
-      </div>      
-      <ul>
-        {notesToShow.map((note, i) => 
-          <Note
-            key={i}
-            note={note} 
-            toggleImportance={() => toggleImportanceOf(note.id)}
-          />
-        )}
-      </ul>
-      <form onSubmit={addNote}>
-        <input
-          value={newNote}
-          onChange={handleNoteChange}
-        />
-        <button type="submit">save</button>
-      </form>   
-    </div>
-  )
-}
+      <h2>Phonebook</h2>
+      <Filter value={searchValue} handleChange={handleSearchValue}></Filter>
 
-export default App 
+      <h2>add a new</h2>
+      <PersonForm
+        handleSubmit={onSubmit}
+        nameValue={newName}
+        numValue={newNumber}
+        nameChange={handleNameChange}
+        numChange={handleNumberChange}
+      />
+
+      <h2>Numbers</h2>
+      <Persons value={personToShow}></Persons>
+    </div>
+  );
+};
+
+export default App;
