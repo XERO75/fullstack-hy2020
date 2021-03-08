@@ -1,70 +1,94 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
-const Filter = ({ searchValue, handleChange }) => {
-  return (
-    <div>
-      <form>
-        find contries: <input value={searchValue} onChange={handleChange} />
-      </form>
-    </div>
-  );
-};
-
-const Contry = ({ value }) => {
-  const toggleShow = (val) => {
-    console.log(val);
-  };
-  return (
-    <div>
-      <ul>
-        {value.map((val) => {
-          return (
-            <li key={val.name}>
-              {val.name} <button onClick={() => toggleShow(val)}>show</button>
-              <br></br>
-              <img src={val.flag} alt="" width="100px" />
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-};
+import React, { useState, useEffect } from 'react'
+import Note from './components/Note'
+import Notification from './components/Notification'
+import noteService from './services/notes'
 
 const App = () => {
-  const [searchValue, setSearchValue] = useState('');
-  const [contries, setContries] = useState([]);
+  const [notes, setNotes] = useState([]) 
+  const [newNote, setNewNote] = useState('')
+  const [showAll, setShowAll] = useState(true)
+  const [errorMessage, setErrorMessage] = useState(null)
 
   useEffect(() => {
-    if (searchValue) {
-      axios
-        .get(`https://restcountries.eu/rest/v2/name/${searchValue}`)
-        .then((response) => {
-          if (response.data.length > 10) {
-            setContries([{ name: 'too many matches, specify another filter' }]);
-          } else {
-            setContries(response.data);
-          }
-        });
+    noteService
+      .getAll()
+      .then(initialNotes => {
+        setNotes(initialNotes)
+      })
+  }, [])
+
+  const addNote = (event) => {
+    event.preventDefault()
+    const noteObject = {
+      content: newNote,
+      date: new Date().toISOString(),
+      important: Math.random() > 0.5,
+      id: notes.length + 1,
     }
-  }, [searchValue]);
+  
+    noteService
+      .create(noteObject)
+      .then(returnedNote => {
+        setNotes(notes.concat(returnedNote))
+        setNewNote('')
+      })
+  }
 
-  const onSearch = (e) => {
-    setSearchValue(e.target.value);
-    console.log(e.target.value);
-  };
+  const toggleImportanceOf = (id) => {
+    // const url = `http://localhost:3001/notes/${id}`
+    const note = notes.find(n => n.id === id)
+    const changedNote = { ...note, important: !note.important }
+  
+    noteService
+      .update(id, changedNote)
+      .then(returnedNote => {
+        setNotes(notes.map(note => note.id !== id ? note : returnedNote))
+      })
+      .catch(error => {
+        setErrorMessage(
+          `Note '${note.content}' was already removed from server`
+        )
+        setTimeout(() => {
+          setErrorMessage(null)
+        }, 5000)   
+      })
+  }
 
-  const onShow = (e) => {
-    console.log(e.target.value);
-  };
+  const handleNoteChange = (event) => {
+    setNewNote(event.target.value)
+  }
+
+  const notesToShow = showAll
+    ? notes
+    : notes.filter(note => note.important)
 
   return (
     <div>
-      <Filter searchValue={searchValue} handleChange={onSearch}></Filter>
-      <Contry value={contries} handleClick={onShow}></Contry>
+      <h1>Notes</h1>
+      <Notification message={errorMessage} />
+      <div>
+        <button onClick={() => setShowAll(!showAll)}>
+          show {showAll ? 'important' : 'all' }
+        </button>
+      </div>      
+      <ul>
+        {notesToShow.map((note, i) => 
+          <Note
+            key={i}
+            note={note} 
+            toggleImportance={() => toggleImportanceOf(note.id)}
+          />
+        )}
+      </ul>
+      <form onSubmit={addNote}>
+        <input
+          value={newNote}
+          onChange={handleNoteChange}
+        />
+        <button type="submit">save</button>
+      </form>   
     </div>
-  );
-};
+  )
+}
 
-export default App;
+export default App 
