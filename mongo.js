@@ -1,17 +1,8 @@
 const mongoose = require('mongoose');
 
-if (process.argv.length < 3) {
-  console.log(
-    'Please provide the password as an argument: node mongo.js <password>'
-  );
-  process.exit(1);
-}
-
 const password = process.argv[2];
 
-const url =
-  // `mongodb+srv://fullstack:${password}@cluster0-ostce.mongodb.net/test?retryWrites=true`
-  `mongodb+srv://fullstack:${password}@cluster0.pt2ll.mongodb.net/phone-app?retryWrites=true&w=majority`;
+const url = `mongodb+srv://fullstack:${password}@cluster0.pt2ll.mongodb.net/phone-app?retryWrites=true&w=majority`;
 
 mongoose
   .connect(url, {
@@ -34,8 +25,6 @@ const personSchema = new mongoose.Schema({
 });
 
 const Person = mongoose.model('Person', personSchema);
-
-console.log('arguments', process.argv);
 
 if (process.argv.length <= 3) {
   Person.find({})

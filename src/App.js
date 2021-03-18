@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import phoneService from './services/persons'
+import phoneService from './services/persons';
 
 const Filter = ({ searchValue, handleChange }) => {
   return (
@@ -58,10 +58,15 @@ const App = () => {
   const [personToShow, setPersonToShow] = useState(persons);
 
   const hook = () => {
-    phoneService.getAll().then((res) => {
-      setPersonToShow(res.persons);
-      setPersons(res.persons);
-    });
+    phoneService
+      .getAll()
+      .then((res) => {
+        setPersonToShow(res);
+        setPersons(res);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
 
   useEffect(hook, []);
@@ -71,16 +76,16 @@ const App = () => {
     const newPerson = {
       name: newName,
       number: newNumber,
-      id: new Date()
+      id: new Date(),
     };
     let findIdx = persons.findIndex((item) => item.name === newName);
     if (findIdx >= 0) {
       alert(`${newName} is already added to phonebook`);
       return;
     }
-    phoneService.create(newPerson).then(response => {
-      console.log(response)
-    })
+    phoneService.create(newPerson).then((response) => {
+      console.log(response);
+    });
     setPersons(persons.concat(newPerson));
     setPersonToShow(JSON.parse(JSON.stringify(persons.concat(newPerson))));
     setNewName('');
