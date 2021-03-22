@@ -40,7 +40,7 @@ const Persons = ({ value }) => {
       <ul>
         {value.map((person) => {
           return (
-            <li key={person.name}>
+            <li key={person.id}>
               {person.name} {person.number}
             </li>
           );
@@ -76,16 +76,23 @@ const App = () => {
     const newPerson = {
       name: newName,
       number: newNumber,
-      id: new Date(),
     };
-    let findIdx = persons.findIndex((item) => item.name === newName);
-    if (findIdx >= 0) {
-      alert(`${newName} is already added to phonebook`);
+    let findIdx = persons.find((item) => item.name === newName);
+    if (findIdx) {
+      phoneService.update(findIdx.id, newPerson).then((response) => {
+        console.log(response);
+      });
       return;
     }
-    phoneService.create(newPerson).then((response) => {
-      console.log(response);
-    });
+    phoneService
+      .create(newPerson)
+      .then((response) => {
+        console.log(response);
+      })
+      .catch((error) => {
+        // this is the way to access the error message
+        console.log(error.response.data);
+      });
     setPersons(persons.concat(newPerson));
     setPersonToShow(JSON.parse(JSON.stringify(persons.concat(newPerson))));
     setNewName('');
